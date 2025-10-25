@@ -37,18 +37,35 @@ function serveHealth(res) {
   );
 }
 
-function serveJson(res, payload) {
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+function setCorsHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function serveJson(res, payload, statusCode = 200) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(payload));
 }
 
-function handleMenuRequest(res) {
+function handleMenuRequest(req, res) {
+  setCorsHeaders(res);
+
+  if (req.method === 'HEAD') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end();
+    return;
+  }
+
   const menuPath = path.join(DATA_DIR, 'menu.json');
 
   fs.readFile(menuPath, 'utf8', (error, raw) => {
     if (error) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ message: 'Unable to load menu configuration.' }));
+      res.end(
+        JSON.stringify({ message: 'Unable to load menu configuration.' })
+      );
       return;
     }
 
@@ -136,7 +153,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname || '/';
+  const isApiRequest = pathname.startsWith('/api/');
+
+  if (req.method === 'OPTIONS' && isApiRequest) {
+    setCorsHeaders(res);
+    res.writeHead(204, { 'Content-Length': '0' });
+    res.end();
+    return;
+  }
+
   if (req.method !== 'GET' && req.method !== 'HEAD') {
+    if (isApiRequest) {
+      setCorsHeaders(res);
+    }
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Method not allowed');
     return;
@@ -147,10 +178,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const { pathname } = url.parse(req.url, true);
-
   if (pathname === '/api/menu') {
-    handleMenuRequest(res);
+    handleMenuRequest(req, res);
     return;
   }
 
