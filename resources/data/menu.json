@@ -1,0 +1,29 @@
+{
+  "apps": [
+    {
+      "name": "BeaverPhone",
+      "accent": "cyan",
+      "icon": "Smartphone"
+    },
+    {
+      "name": "BeaverHome",
+      "accent": "violet",
+      "icon": "Home"
+    },
+    {
+      "name": "BeaverAlarm",
+      "accent": "amber",
+      "icon": "Shield"
+    },
+    {
+      "name": "BeaverDoc",
+      "accent": "red",
+      "icon": "FileText"
+    },
+    {
+      "name": "BeaverNet",
+      "accent": "green",
+      "icon": "Network"
+    }
+  ]
+}

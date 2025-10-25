@@ -2,9 +2,11 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const url = require('url');
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 const RESOURCES_DIR = path.join(__dirname, 'resources');
+const DATA_DIR = path.join(RESOURCES_DIR, 'data');
 const DEFAULT_FILE = 'index.html';
 
 const MIME_TYPES = {
@@ -33,6 +35,31 @@ function serveHealth(res) {
       timestamp: new Date().toISOString(),
     })
   );
+}
+
+function serveJson(res, payload) {
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(payload));
+}
+
+function handleMenuRequest(res) {
+  const menuPath = path.join(DATA_DIR, 'menu.json');
+
+  fs.readFile(menuPath, 'utf8', (error, raw) => {
+    if (error) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ message: 'Unable to load menu configuration.' }));
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      serveJson(res, parsed);
+    } catch (parseError) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ message: 'Invalid menu configuration.' }));
+    }
+  });
 }
 
 function getContentType(filePath) {
@@ -103,6 +130,12 @@ function serveStaticFile(res, filePath, method, shouldFallback) {
 }
 
 const server = http.createServer((req, res) => {
+  if (!req.url) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request');
+    return;
+  }
+
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Method not allowed');
@@ -111,6 +144,13 @@ const server = http.createServer((req, res) => {
 
   if (req.url === '/health') {
     serveHealth(res);
+    return;
+  }
+
+  const { pathname } = url.parse(req.url, true);
+
+  if (pathname === '/api/menu') {
+    handleMenuRequest(res);
     return;
   }
 

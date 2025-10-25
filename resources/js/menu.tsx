@@ -53,14 +53,95 @@ const AppTile: React.FC<AppTileProps> = ({ name, icon: Icon, accent, onClick }) 
   );
 };
 
+type RemoteMenu = {
+  apps?: Array<{
+    name?: string;
+    icon?: string;
+    accent?: Accent;
+  }>;
+};
+
+function resolveAccent(value: string | undefined): Accent {
+  switch (value) {
+    case 'amber':
+    case 'violet':
+    case 'cyan':
+    case 'red':
+    case 'green':
+      return value;
+    default:
+      return 'amber';
+  }
+}
+
+function mapRemoteApps(remote: RemoteMenu | null): AppTileProps[] {
+  if (!remote || !Array.isArray(remote.apps)) {
+    return [];
+  }
+
+  return remote.apps
+    .map((app) => {
+      const name = typeof app.name === 'string' ? app.name.trim() : '';
+
+      if (!name) {
+        return null;
+      }
+
+      const iconName = typeof app.icon === 'string' ? app.icon : undefined;
+
+      return {
+        name,
+        accent: resolveAccent(app.accent),
+        icon: iconName ? resolveIcon(iconName) : undefined,
+      };
+    })
+    .filter((value): value is AppTileProps => value !== null);
+}
+
 const BeaverMenu: React.FC = () => {
-  const apps: AppTileProps[] = [
-    { name: 'BeaverPhone', icon: icons.Smartphone, accent: 'cyan' },
-    { name: 'BeaverHome', icon: icons.Home, accent: 'violet' },
-    { name: 'BeaverAlarm', icon: icons.Shield, accent: 'amber' },
-    { name: 'BeaverDoc', icon: icons.FileText, accent: 'red' },
-    { name: 'BeaverNet', icon: icons.Network, accent: 'green' },
-  ];
+  const [apps, setApps] = React.useState<AppTileProps[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadMenu() {
+      try {
+        setError(null);
+        setIsLoading(true);
+        const response = await fetch('http://127.0.0.1:5000/api/menu', {
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Backend responded with ${response.status}`);
+        }
+
+        const payload: RemoteMenu = await response.json();
+        if (!cancelled) {
+          const mapped = mapRemoteApps(payload);
+          setApps(mapped);
+          setError(mapped.length === 0 ? 'No applications available.' : null);
+          setIsLoading(false);
+        }
+      } catch (fetchError) {
+        if (!cancelled) {
+          console.error('Failed to load menu data', fetchError);
+          setError('Unable to reach the BeaverKiosk backend (port 5000).');
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadMenu();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="menu-root">
@@ -73,6 +154,19 @@ const BeaverMenu: React.FC = () => {
         {apps.map((app) => (
           <AppTile key={app.name} {...app} />
         ))}
+        {apps.length === 0 && isLoading && (
+          <div className="menu-status" role="status">
+            <p>Loading menu from Node backend&hellip;</p>
+          </div>
+        )}
+        {apps.length === 0 && !isLoading && error && (
+          <div className="menu-status" role="status">
+            <p>{error}</p>
+            <p className="menu-status__hint">
+              Ensure the Node.js backend is running on port 5000.
+            </p>
+          </div>
+        )}
       </main>
 
       <footer className="menu-footer">
