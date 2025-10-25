@@ -60,6 +60,166 @@ declare global {
 
 const { useEffect, useMemo, useState, useCallback } = React;
 
+type ClassValue = string | false | null | undefined;
+
+type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+
+type ButtonProps = React.PropsWithChildren<
+  {
+    variant?: ButtonVariant;
+    icon?: React.ReactNode;
+    className?: string;
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>
+>;
+
+type CardProps = React.PropsWithChildren<
+  {
+    title?: string;
+    caption?: string;
+    adornment?: React.ReactNode;
+    className?: string;
+  } & React.HTMLAttributes<HTMLDivElement>
+>;
+
+type BadgeTone = 'neutral' | 'positive' | 'warning' | 'critical' | 'info';
+
+type BadgeProps = React.PropsWithChildren<
+  {
+    tone?: BadgeTone;
+    className?: string;
+  } & React.HTMLAttributes<HTMLSpanElement>
+>;
+
+type TagTone = 'default' | 'info' | 'success' | 'danger';
+
+type TagProps = React.PropsWithChildren<
+  {
+    tone?: TagTone;
+    className?: string;
+  } & React.HTMLAttributes<HTMLSpanElement>
+>;
+
+type LucideIcon = React.ComponentType<
+  {
+    size?: number | string;
+    color?: string;
+    strokeWidth?: number | string;
+    className?: string;
+  }
+>;
+
+type AppTileProps = {
+  icon?: LucideIcon;
+  name: string;
+  accent: 'cyan' | 'violet' | 'amber';
+};
+
+type GlobalLucide = {
+  [key: string]: LucideIcon;
+};
+
+declare global {
+  interface Window {
+    LucideReact?: GlobalLucide;
+  }
+}
+
+function joinClassNames(...classes: ClassValue[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
+const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  icon,
+  className = '',
+  children,
+  ...props
+}) => {
+  return (
+    <button
+      className={joinClassNames('ui-button', `ui-button--${variant}`, className)}
+      {...props}
+    >
+      {icon ? (
+        <span className="ui-button__icon" aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
+      <span className="ui-button__label">{children}</span>
+    </button>
+  );
+};
+
+const Card: React.FC<CardProps> = ({
+  title,
+  caption,
+  adornment,
+  className = '',
+  children,
+  ...props
+}) => {
+  return (
+    <section className={joinClassNames('ui-card', className)} {...props}>
+      {(title || caption || adornment) && (
+        <header className="ui-card__header">
+          <div>
+            {title ? <h2 className="ui-card__title">{title}</h2> : null}
+            {caption ? <p className="ui-card__caption">{caption}</p> : null}
+          </div>
+          {adornment ? <div className="ui-card__adornment">{adornment}</div> : null}
+        </header>
+      )}
+      <div className="ui-card__body">{children}</div>
+    </section>
+  );
+};
+
+const Badge: React.FC<BadgeProps> = ({
+  tone = 'neutral',
+  className = '',
+  children,
+  ...props
+}) => {
+  return (
+    <span
+      className={joinClassNames('ui-badge', `ui-badge--${tone}`, className)}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};
+
+const Tag: React.FC<TagProps> = ({
+  tone = 'default',
+  className = '',
+  children,
+  ...props
+}) => {
+  return (
+    <span className={joinClassNames('ui-tag', `ui-tag--${tone}`, className)} {...props}>
+      {children}
+    </span>
+  );
+};
+
+const AppTile: React.FC<AppTileProps> = ({ icon: Icon, name, accent }) => {
+  const fallbackInitial = name ? name.charAt(0).toUpperCase() : '?';
+
+  return (
+    <article className={joinClassNames('app-tile', `app-tile--${accent}`)}>
+      <div className="app-tile__icon-surface" aria-hidden="true">
+        {Icon ? (
+          <Icon className="app-tile__icon" strokeWidth={1.75} />
+        ) : (
+          <span className="app-tile__fallback">{fallbackInitial}</span>
+        )}
+      </div>
+      <h3 className="app-tile__name">{name}</h3>
+    </article>
+  );
+};
+
 const statusMessages: Record<'loading' | 'ready' | 'error', string> = {
   loading: 'Attempting to contact the Node.js API service…',
   ready: 'Synced with the Node.js API successfully.',
@@ -184,171 +344,233 @@ const Dashboard: React.FC = () => {
   const tasks = dashboardData?.tasks ?? [];
   const services = dashboardData?.services ?? [];
 
-  const apiStatusBadge = useMemo(() => {
-    return (
-      <span className={`status-badge status-badge--${apiStatus}`}>
-        {statusMessages[apiStatus]}
-      </span>
-    );
-  }, [apiStatus]);
+  const lucideIcons = useMemo(() => {
+    const library = window.LucideReact;
+    return {
+      phone: library?.Smartphone,
+      home: library?.Home,
+      network: library?.Network,
+    };
+  }, []);
+
+  const apps = useMemo<AppTileProps[]>(
+    () => [
+      { icon: lucideIcons.phone, name: 'BeaverPhone', accent: 'cyan' },
+      { icon: lucideIcons.home, name: 'BeaverHome', accent: 'violet' },
+      { icon: lucideIcons.network, name: 'BeaverNet', accent: 'amber' },
+    ],
+    [lucideIcons.home, lucideIcons.network, lucideIcons.phone]
+  );
+
+  const statusTone: BadgeTone =
+    apiStatus === 'ready' ? 'positive' : apiStatus === 'loading' ? 'info' : 'critical';
+
+  const updateTagTone: TagTone = updateMessage
+    ? updateMessage.includes('Unable')
+      ? 'danger'
+      : 'success'
+    : 'default';
 
   return (
     <div className="dashboard">
-      <header className="dashboard__header">
-        <div>
-          <h1 className="dashboard__title">Application Control Center</h1>
-          <p className="dashboard__subtitle">
-            Observability console for the Node.js backend, Neutralino runtime, and
-            React TypeScript interface communicating over IPC and REST.
-          </p>
+      <aside className="dashboard__aside">
+        <div className="brand">
+          <span className="brand__title">BeaverKiosk</span>
+          <Tag tone="info">Menu</Tag>
         </div>
-        <div className="dashboard__header-actions">
-          <button
+        <p className="brand__subtitle">
+          Launch kiosk-ready Beaver experiences and monitor runtime state in one
+          place.
+        </p>
+        <div className="brand__actions">
+          <Button
             type="button"
-            className="button button--ghost"
+            variant="ghost"
             onClick={() => window.dashboardBridge?.openDocs()}
           >
-            Open documentation
-          </button>
-          <button
+            Documentation
+          </Button>
+          <Button
             type="button"
-            className="button"
             onClick={() => window.dashboardBridge?.openTutorial()}
           >
             Watch tutorial
-          </button>
+          </Button>
         </div>
-      </header>
 
-      <section className="dashboard__info">
-        <article className="info-card">
-          <div className="info-card__grid">
-            <span>Application ID</span>
-            <strong>{appInfo?.id ?? 'Loading&hellip;'}</strong>
-            <span>Runtime version</span>
-            <strong>{appInfo?.version ?? 'Unknown'}</strong>
-            <span>Client version</span>
-            <strong>{appInfo?.clientVersion ?? 'Unknown'}</strong>
-            <span>Operating system</span>
-            <strong>{appInfo?.os ?? 'Unknown'}</strong>
-            <span>IPC port</span>
-            <strong>{appInfo?.port ?? '-'}</strong>
+        <Card
+          title="Platform overview"
+          caption="Neutralino runtime details"
+          adornment={<Badge tone={statusTone}>{statusMessages[apiStatus]}</Badge>}
+        >
+          <dl className="key-value-grid">
+            <div>
+              <dt>Application</dt>
+              <dd>{appInfo?.id ?? 'Loading…'}</dd>
+            </div>
+            <div>
+              <dt>Runtime</dt>
+              <dd>{appInfo?.version ?? 'Unknown'}</dd>
+            </div>
+            <div>
+              <dt>Client</dt>
+              <dd>{appInfo?.clientVersion ?? 'Unknown'}</dd>
+            </div>
+            <div>
+              <dt>OS</dt>
+              <dd>{appInfo?.os ?? 'Unknown'}</dd>
+            </div>
+            <div>
+              <dt>IPC port</dt>
+              <dd>{appInfo?.port ?? '—'}</dd>
+            </div>
+          </dl>
+          <div className="aside-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCheckUpdates}
+              disabled={checkingUpdates}
+            >
+              {checkingUpdates ? 'Checking…' : 'Check for updates'}
+            </Button>
+            <Tag tone={updateTagTone} aria-live="polite">
+              {updateMessage || 'No updates requested yet'}
+            </Tag>
           </div>
-          <div className="info-card__grid">
-            <span>Update status</span>
-            <strong>{updateMessage || 'No updates requested yet'}</strong>
-          </div>
-          <button
-            type="button"
-            className="button button--secondary"
-            onClick={handleCheckUpdates}
-            disabled={checkingUpdates}
-          >
-            {checkingUpdates ? 'Checking for updates…' : 'Check for updates'}
-          </button>
-        </article>
+        </Card>
 
-        <article className="info-card">
-          {apiStatusBadge}
-          <p className="info-card__subtitle">
+        <Card title="Data refresh" caption="REST API synchronisation">
+          <p className="muted-text">
             {apiStatus === 'ready'
               ? `Last refreshed at ${lastUpdated}.`
               : 'The dashboard will retry automatically every minute.'}
           </p>
-          <button
-            type="button"
-            className="button button--ghost"
-            onClick={() => loadDashboardData()}
-          >
+          <Button type="button" variant="ghost" onClick={() => loadDashboardData()}>
             Refresh now
-          </button>
-        </article>
-      </section>
+          </Button>
+        </Card>
+      </aside>
 
-      <section className="dashboard__metrics">
-        {metrics.map((metric) => (
-          <article key={metric.label} className="metric-card">
-            <span className="metric-card__label">{metric.label}</span>
-            <p className="metric-card__value">{metric.value}</p>
-            <span
-              className={`metric-card__trend metric-card__trend--${
-                metric.change >= 0 ? 'up' : 'down'
-              }`}
-            >
-              {metric.change >= 0 ? '▲' : '▼'} {Math.abs(metric.change)}%
-            </span>
-          </article>
-        ))}
-      </section>
-
-      <section className="dashboard__main-grid">
-        <article className="card">
-          <h2>Service health</h2>
-          <ul className="service-list">
-            {services.map((service) => (
-              <li key={service.name} className="service-item">
-                <div className="service-item__meta">
-                  <strong>{service.name}</strong>
-                  <span className="service-item__latency">
-                    Average latency: {service.responseTime}ms
-                  </span>
-                </div>
-                <span className={`service-status service-status--${service.status}`}>
-                  {service.status}
-                </span>
-              </li>
+      <main className="dashboard__main">
+        <section className="section">
+          <header className="section__header">
+            <div>
+              <h1 className="section__title">List of apps</h1>
+              <p className="section__subtitle">
+                Icons and bold naming keep the Beaver suite easy to scan.
+              </p>
+            </div>
+            <Badge tone={statusTone}>{statusMessages[apiStatus]}</Badge>
+          </header>
+          <div className="app-grid">
+            {apps.map((app) => (
+              <AppTile key={app.name} {...app} />
             ))}
-          </ul>
-        </article>
+          </div>
+        </section>
 
-        <article className="card">
-          <h2>Deployment tasks</h2>
-          <ul className="task-list">
-            {tasks.map((task) => {
-              const badgeVariant =
-                task.status === 'Completed'
-                  ? 'ready'
-                  : task.status === 'In Progress'
-                  ? 'loading'
-                  : 'error';
-
-              return (
-                <li key={task.id} className="task-item">
-                  <div>
-                    <p className="task-item__title">{task.title}</p>
-                    <span className="task-item__status">{task.status}</span>
+        <div className="dashboard__main-grid">
+          <Card title="Key metrics" caption="Trend snapshots">
+            <div className="metric-grid">
+              {metrics.map((metric) => {
+                const trendUp = metric.change >= 0;
+                return (
+                  <div
+                    key={metric.label}
+                    className={joinClassNames(
+                      'metric-pill',
+                      trendUp ? 'metric-pill--up' : 'metric-pill--down'
+                    )}
+                  >
+                    <span className="metric-pill__label">{metric.label}</span>
+                    <strong className="metric-pill__value">{metric.value}</strong>
+                    <Tag tone={trendUp ? 'success' : 'danger'}>
+                      {trendUp ? '▲' : '▼'} {Math.abs(metric.change)}%
+                    </Tag>
                   </div>
-                  <span className={`status-badge status-badge--${badgeVariant}`}>
-                    {badgeVariant === 'ready'
-                      ? 'Done'
-                      : badgeVariant === 'loading'
-                      ? 'In progress'
-                      : 'Action needed'}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </article>
+                );
+              })}
+            </div>
+          </Card>
 
-        <article className="card">
-          <h2>Recent tray interactions</h2>
-          {trayEvents.length > 0 ? (
-            <ul className="tray-feed">
-              {trayEvents.map((event) => (
-                <li key={`${event.id}-${event.timestamp}`} className="tray-feed__item">
-                  <span>{event.id}</span>
-                  <span className="tray-feed__time">{formatTime(event.timestamp)}</span>
-                </li>
-              ))}
+          <Card title="Deployment tasks" caption="Rollout checklist">
+            <ul className="ui-list">
+              {tasks.map((task) => {
+                const tone: TagTone =
+                  task.status === 'Completed'
+                    ? 'success'
+                    : task.status === 'In Progress'
+                    ? 'info'
+                    : 'danger';
+
+                return (
+                  <li key={task.id} className="ui-list__item">
+                    <div>
+                      <p className="ui-list__title">{task.title}</p>
+                      <span className="ui-list__description">{task.status}</span>
+                    </div>
+                    <Tag tone={tone}>
+                      {tone === 'success'
+                        ? 'Done'
+                        : tone === 'info'
+                        ? 'In progress'
+                        : 'Action needed'}
+                    </Tag>
+                  </li>
+                );
+              })}
             </ul>
-          ) : (
-            <p className="empty-state">
-              Trigger the Neutralino tray actions to see live telemetry here.
-            </p>
-          )}
-        </article>
-      </section>
+          </Card>
+
+          <Card title="Service health" caption="Edge agents">
+            <ul className="ui-list">
+              {services.map((service) => {
+                const tone: BadgeTone =
+                  service.status === 'online'
+                    ? 'positive'
+                    : service.status === 'degraded'
+                    ? 'warning'
+                    : 'critical';
+
+                return (
+                  <li key={service.name} className="ui-list__item">
+                    <div>
+                      <p className="ui-list__title">{service.name}</p>
+                      <span className="ui-list__description">
+                        Average latency: {service.responseTime}ms
+                      </span>
+                    </div>
+                    <Badge tone={tone}>{service.status}</Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+
+          <Card title="Recent tray events" caption="Neutralino tray telemetry">
+            {trayEvents.length > 0 ? (
+              <ul className="ui-list ui-list--stacked">
+                {trayEvents.map((event) => (
+                  <li key={`${event.id}-${event.timestamp}`} className="ui-list__item">
+                    <div>
+                      <p className="ui-list__title">{event.id}</p>
+                      <span className="ui-list__description">
+                        {formatTime(event.timestamp)}
+                      </span>
+                    </div>
+                    <Tag tone="info">Tray</Tag>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">
+                Trigger the Neutralino tray actions to see live telemetry here.
+              </p>
+            )}
+          </Card>
+        </div>
+      </main>
     </div>
   );
 };
