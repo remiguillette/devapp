@@ -50,6 +50,20 @@ function mapRemoteApps(remote) {
     .filter(Boolean);
 }
 
+function resolveBackendBaseUrl() {
+  if (typeof window === 'undefined' || typeof window.location === 'undefined') {
+    return 'http://127.0.0.1:5000';
+  }
+
+  const { protocol, host } = window.location;
+
+  if (protocol === 'http:' || protocol === 'https:') {
+    return `${protocol}//${host}`;
+  }
+
+  return 'http://127.0.0.1:5000';
+}
+
 const BeaverMenu = () => {
   const [apps, setApps] = React.useState([]);
   const [error, setError] = React.useState(null);
@@ -62,7 +76,8 @@ const BeaverMenu = () => {
       try {
         setError(null);
         setIsLoading(true);
-        const response = await fetch('http://127.0.0.1:5000/api/menu', {
+        const baseUrl = resolveBackendBaseUrl();
+        const response = await fetch(`${baseUrl}/api/menu`, {
           headers: {
             Accept: 'application/json',
           },
