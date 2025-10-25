@@ -37,10 +37,43 @@ function serveHealth(res) {
   );
 }
 
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function resolveAllowedOrigin(req) {
+  const origin = req.headers ? req.headers.origin : undefined;
+
+  if (typeof origin !== 'string' || origin.length === 0) {
+    return '*';
+  }
+
+  if (origin === 'null') {
+    return 'null';
+  }
+
+  try {
+    const { protocol, hostname } = new URL(origin);
+
+    if (
+      (protocol === 'http:' || protocol === 'https:') &&
+      (hostname === '127.0.0.1' || hostname === 'localhost')
+    ) {
+      return origin;
+    }
+
+    if (protocol === 'neutralino:') {
+      return origin;
+    }
+  } catch (error) {
+    return '*';
+  }
+
+  return '*';
+}
+
+function setCorsHeaders(req, res) {
+  const allowedOrigin = resolveAllowedOrigin(req);
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
 }
 
 function serveJson(res, payload, statusCode = 200) {
@@ -50,7 +83,7 @@ function serveJson(res, payload, statusCode = 200) {
 }
 
 function handleMenuRequest(req, res) {
-  setCorsHeaders(res);
+  setCorsHeaders(req, res);
 
   if (req.method === 'HEAD') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -158,7 +191,7 @@ const server = http.createServer((req, res) => {
   const isApiRequest = pathname.startsWith('/api/');
 
   if (req.method === 'OPTIONS' && isApiRequest) {
-    setCorsHeaders(res);
+    setCorsHeaders(req, res);
     res.writeHead(204, { 'Content-Length': '0' });
     res.end();
     return;
@@ -166,7 +199,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     if (isApiRequest) {
-      setCorsHeaders(res);
+      setCorsHeaders(req, res);
     }
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Method not allowed');
