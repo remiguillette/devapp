@@ -30,21 +30,14 @@
       crossorigin
     ></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Neutralino.js client. This file is gitignored,
-        because `neu update` typically downloads it.
-        Avoid copy-pasting it.
-        -->
-    <script src="/js/neutralino.js"></script>
-    <!-- Neutralino bootstrap helpers -->
-    <script src="/js/main.js"></script>
     <!-- Lightweight lucide-react build shipped locally -->
     <script src="/js/vendor/lucide-react.js"></script>
-    <!-- React Beaver menu written in TypeScript -->
+    <!-- React Beaver menu written in JSX -->
     <script
       type="text/babel"
       data-type="module"
-      data-presets="typescript,react"
-      src="/js/menu.tsx"
+      data-presets="env,react"
+      src="/js/menu.jsx"
     ></script>
   </body>
 </html>

@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const url = require('url');
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
+const DEFAULT_PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 const RESOURCES_DIR = path.join(__dirname, 'resources');
 const DATA_DIR = path.join(RESOURCES_DIR, 'data');
 const DEFAULT_FILE = 'index.html';
@@ -13,6 +13,7 @@ const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
+  '.jsx': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -30,7 +31,7 @@ function serveHealth(res) {
   res.end(
     JSON.stringify({
       status: 'ok',
-      port: PORT,
+      port: currentPort,
       host: os.hostname(),
       timestamp: new Date().toISOString(),
     })
@@ -58,7 +59,7 @@ function resolveAllowedOrigin(req) {
       return origin;
     }
 
-    if (protocol === 'neutralino:') {
+    if (protocol === 'file:' || protocol === 'neutralino:') {
       return origin;
     }
   } catch (error) {
@@ -179,6 +180,8 @@ function serveStaticFile(res, filePath, method, shouldFallback) {
   });
 }
 
+let currentPort = DEFAULT_PORT;
+
 const server = http.createServer((req, res) => {
   if (!req.url) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -228,6 +231,84 @@ const server = http.createServer((req, res) => {
   serveStaticFile(res, filePath, req.method, !hasExtension);
 });
 
-server.listen(PORT, () => {
-  console.log(`Application available at http://localhost:${PORT}`);
-});
+let isStarting = false;
+
+function startServer(port = DEFAULT_PORT) {
+  if (server.listening) {
+    return Promise.resolve(server);
+  }
+
+  if (isStarting) {
+    return new Promise((resolve, reject) => {
+      const handleListening = () => {
+        server.off('error', handleError);
+        resolve(server);
+      };
+
+      const handleError = (error) => {
+        server.off('listening', handleListening);
+        reject(error);
+      };
+
+      server.once('listening', handleListening);
+      server.once('error', handleError);
+    });
+  }
+
+  isStarting = true;
+
+  return new Promise((resolve, reject) => {
+    const handleListening = () => {
+      server.off('error', handleError);
+      isStarting = false;
+      const address = server.address();
+      if (address && typeof address === 'object') {
+        currentPort = address.port;
+      } else {
+        currentPort = port;
+      }
+      console.log(`Application available at http://localhost:${currentPort}`);
+      resolve(server);
+    };
+
+    const handleError = (error) => {
+      server.off('listening', handleListening);
+      isStarting = false;
+      reject(error);
+    };
+
+    server.once('listening', handleListening);
+    server.once('error', handleError);
+    server.listen(port);
+  });
+}
+
+function stopServer() {
+  if (!server.listening) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
+module.exports = {
+  server,
+  startServer,
+  stopServer,
+};
+
+if (require.main === module) {
+  startServer().catch((error) => {
+    console.error('Failed to start backend server', error);
+    process.exitCode = 1;
+  });
+}
