@@ -114,19 +114,59 @@ type AppTileProps = {
   accent: 'cyan' | 'violet' | 'amber';
 };
 
-type GlobalLucide = {
-  [key: string]: LucideIcon;
-};
-
-declare global {
-  interface Window {
-    LucideReact?: GlobalLucide;
-  }
-}
-
 function joinClassNames(...classes: ClassValue[]): string {
   return classes.filter(Boolean).join(' ');
 }
+
+const createLucideIcon = (paths: React.ReactNode): LucideIcon => {
+  const Icon: LucideIcon = ({
+    size = 24,
+    color = 'currentColor',
+    strokeWidth = 2,
+    className = '',
+  }) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {paths}
+    </svg>
+  );
+
+  return Icon;
+};
+
+const SmartphoneIcon = createLucideIcon(
+  <>
+    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+    <path d="M12 18h.01" />
+  </>
+);
+
+const HomeIcon = createLucideIcon(
+  <>
+    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+    <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </>
+);
+
+const NetworkIcon = createLucideIcon(
+  <>
+    <rect x="16" y="16" width="6" height="6" rx="1" />
+    <rect x="2" y="16" width="6" height="6" rx="1" />
+    <rect x="9" y="2" width="6" height="6" rx="1" />
+    <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
+    <path d="M12 12V8" />
+  </>
+);
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
@@ -344,22 +384,13 @@ const Dashboard: React.FC = () => {
   const tasks = dashboardData?.tasks ?? [];
   const services = dashboardData?.services ?? [];
 
-  const lucideIcons = useMemo(() => {
-    const library = window.LucideReact;
-    return {
-      phone: library?.Smartphone,
-      home: library?.Home,
-      network: library?.Network,
-    };
-  }, []);
-
   const apps = useMemo<AppTileProps[]>(
     () => [
-      { icon: lucideIcons.phone, name: 'BeaverPhone', accent: 'cyan' },
-      { icon: lucideIcons.home, name: 'BeaverHome', accent: 'violet' },
-      { icon: lucideIcons.network, name: 'BeaverNet', accent: 'amber' },
+      { icon: SmartphoneIcon, name: 'BeaverPhone', accent: 'cyan' },
+      { icon: HomeIcon, name: 'BeaverHome', accent: 'violet' },
+      { icon: NetworkIcon, name: 'BeaverNet', accent: 'amber' },
     ],
-    [lucideIcons.home, lucideIcons.network, lucideIcons.phone]
+    []
   );
 
   const statusTone: BadgeTone =
