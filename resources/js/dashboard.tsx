@@ -49,6 +49,7 @@ type DashboardBridge = {
 declare global {
   interface Window {
     dashboardBridge?: DashboardBridge;
+    LucideReact?: LucideReactModule;
   }
 
   const NL_APPID: string;
@@ -105,8 +106,15 @@ type LucideIcon = React.ComponentType<
     color?: string;
     strokeWidth?: number | string;
     className?: string;
-  }
+  } & React.SVGProps<SVGSVGElement>
 >;
+
+type LucideIconNode = [string, Record<string, unknown>];
+
+type LucideReactModule = {
+  createLucideIcon: (iconName: string, iconNode: LucideIconNode[]) => LucideIcon;
+  icons?: Record<string, LucideIcon | undefined>;
+};
 
 type AppTileProps = {
   icon?: LucideIcon;
@@ -118,12 +126,17 @@ function joinClassNames(...classes: ClassValue[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-const createLucideIcon = (paths: React.ReactNode): LucideIcon => {
+const createFallbackLucideIcon = (
+  iconName: string,
+  iconNode: LucideIconNode[]
+): LucideIcon => {
   const Icon: LucideIcon = ({
     size = 24,
     color = 'currentColor',
     strokeWidth = 2,
     className = '',
+    children,
+    ...props
   }) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -135,38 +148,60 @@ const createLucideIcon = (paths: React.ReactNode): LucideIcon => {
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      className={joinClassNames(
+        `lucide lucide-${iconName.toLowerCase()}`,
+        className
+      )}
+      {...props}
     >
-      {paths}
+      {iconNode.map(([tag, attrs], index) =>
+        React.createElement(tag, { key: index, ...attrs })
+      )}
+      {children}
     </svg>
   );
 
   return Icon;
 };
 
-const SmartphoneIcon = createLucideIcon(
-  <>
-    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-    <path d="M12 18h.01" />
-  </>
-);
+const resolveLucideIcon = (
+  iconName: string,
+  iconNode: LucideIconNode[]
+): LucideIcon => {
+  const lucideReact = window.LucideReact as LucideReactModule | undefined;
+  if (lucideReact?.icons?.[iconName]) {
+    return lucideReact.icons[iconName]!;
+  }
 
-const HomeIcon = createLucideIcon(
-  <>
-    <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-    <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-  </>
-);
+  if (lucideReact?.createLucideIcon) {
+    return lucideReact.createLucideIcon(iconName, iconNode);
+  }
 
-const NetworkIcon = createLucideIcon(
-  <>
-    <rect x="16" y="16" width="6" height="6" rx="1" />
-    <rect x="2" y="16" width="6" height="6" rx="1" />
-    <rect x="9" y="2" width="6" height="6" rx="1" />
-    <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
-    <path d="M12 12V8" />
-  </>
-);
+  return createFallbackLucideIcon(iconName, iconNode);
+};
+
+const SmartphoneIcon = resolveLucideIcon('Smartphone', [
+  ['rect', { width: 14, height: 20, x: 5, y: 2, rx: 2, ry: 2 }],
+  ['path', { d: 'M12 18h.01' }],
+]);
+
+const HomeIcon = resolveLucideIcon('Home', [
+  ['path', { d: 'M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8' }],
+  [
+    'path',
+    {
+      d: 'M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+    },
+  ],
+]);
+
+const NetworkIcon = resolveLucideIcon('Network', [
+  ['rect', { x: 16, y: 16, width: 6, height: 6, rx: 1 }],
+  ['rect', { x: 2, y: 16, width: 6, height: 6, rx: 1 }],
+  ['rect', { x: 9, y: 2, width: 6, height: 6, rx: 1 }],
+  ['path', { d: 'M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3' }],
+  ['path', { d: 'M12 12V8' }],
+]);
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
