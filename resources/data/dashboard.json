@@ -1,0 +1,63 @@
+{
+  "metrics": [
+    {
+      "label": "API Requests",
+      "value": "12.4k",
+      "change": 14
+    },
+    {
+      "label": "IPC Messages",
+      "value": "3.8k",
+      "change": 6
+    },
+    {
+      "label": "Avg. Response",
+      "value": "184ms",
+      "change": -3
+    },
+    {
+      "label": "Error Rate",
+      "value": "0.4%",
+      "change": -12
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Sync database migrations",
+      "status": "In Progress"
+    },
+    {
+      "id": 2,
+      "title": "Deploy analytics worker",
+      "status": "Pending"
+    },
+    {
+      "id": 3,
+      "title": "Rotate service credentials",
+      "status": "Completed"
+    }
+  ],
+  "services": [
+    {
+      "name": "Node API Gateway",
+      "status": "online",
+      "responseTime": 42
+    },
+    {
+      "name": "Background task runner",
+      "status": "degraded",
+      "responseTime": 265
+    },
+    {
+      "name": "Neutralino IPC bridge",
+      "status": "online",
+      "responseTime": 18
+    },
+    {
+      "name": "Reporting service",
+      "status": "offline",
+      "responseTime": 0
+    }
+  ]
+}

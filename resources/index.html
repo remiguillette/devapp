@@ -1,27 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <title>NeutralinoJs sample app</title>
-    <link rel="stylesheet" href="/styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Control Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div id="neutralinoapp">
-      <h1>NeutralinoJs</h1>
-      <div id="info"></div>
-      <br/>
-      <img src="/icons/logo.gif" alt="Neutralinojs" />
-      <div>
-        <a href="#" onclick="openDocs();">Docs</a> &middot;  
-        <a href="#" onclick="openTutorial();">Video tutorial</a>
+    <div id="root">
+      <div class="loading-state">
+        <span class="loading-state__spinner" aria-hidden="true"></span>
+        <p>Loading the Neutralino dashboard&hellip;</p>
       </div>
     </div>
-    <!-- Neutralino.js client. This file is gitignored, 
+    <noscript>
+      <div class="noscript-warning">
+        JavaScript is required to run this Neutralino dashboard.
+      </div>
+    </noscript>
+    <script
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Neutralino.js client. This file is gitignored,
         because `neu update` typically downloads it.
-        Avoid copy-pasting it. 
+        Avoid copy-pasting it.
         -->
     <script src="/js/neutralino.js"></script>
-    <!-- Your app's source files -->
+    <!-- Neutralino bootstrap helpers -->
     <script src="/js/main.js"></script>
+    <!-- React dashboard written in TypeScript -->
+    <script
+      type="text/babel"
+      data-type="module"
+      data-presets="typescript,react"
+      src="/js/dashboard.tsx"
+    ></script>
   </body>
 </html>
