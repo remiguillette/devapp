@@ -1,50 +1,13 @@
-/// <reference path="./neutralino.d.ts" />
-
-type Accent = 'amber' | 'violet' | 'cyan' | 'red' | 'green';
-
-type LucideIcon = React.ComponentType<
-  {
-    size?: number | string;
-    color?: string;
-    strokeWidth?: number | string;
-    className?: string;
-  } & React.SVGProps<SVGSVGElement>
->;
-
-type AppTileProps = {
-  name: string;
-  icon?: LucideIcon;
-  accent: Accent;
-  onClick?: () => void;
-};
-
-function resolveIcon(iconName: string): LucideIcon | undefined {
-  const lucideReact = (window as typeof window & {
-    LucideReact?: {
-      icons?: Record<string, LucideIcon | undefined>;
-    };
-  }).LucideReact;
-
-  return lucideReact?.icons?.[iconName];
+function resolveIcon(iconName) {
+  const lucideReact = window.LucideReact;
+  return lucideReact && lucideReact.icons ? lucideReact.icons[iconName] : undefined;
 }
 
-const icons = {
-  Smartphone: resolveIcon('Smartphone'),
-  Home: resolveIcon('Home'),
-  Shield: resolveIcon('Shield'),
-  FileText: resolveIcon('FileText'),
-  Network: resolveIcon('Network'),
-};
-
-const AppTile: React.FC<AppTileProps> = ({ name, icon: Icon, accent, onClick }) => {
+const AppTile = ({ name, icon: Icon, accent, onClick }) => {
   const fallbackInitial = name.charAt(0).toUpperCase();
 
   return (
-    <button
-      type="button"
-      className={`app-tile app-tile--${accent}`}
-      onClick={onClick}
-    >
+    <button type="button" className={`app-tile app-tile--${accent}`} onClick={onClick}>
       <div className="app-tile__icon" aria-hidden="true">
         {Icon ? <Icon size={42} strokeWidth={1.75} /> : <span>{fallbackInitial}</span>}
       </div>
@@ -53,35 +16,24 @@ const AppTile: React.FC<AppTileProps> = ({ name, icon: Icon, accent, onClick }) 
   );
 };
 
-type RemoteMenu = {
-  apps?: Array<{
-    name?: string;
-    icon?: string;
-    accent?: Accent;
-  }>;
-};
+const VALID_ACCENTS = new Set(['amber', 'violet', 'cyan', 'red', 'green']);
 
-function resolveAccent(value: string | undefined): Accent {
-  switch (value) {
-    case 'amber':
-    case 'violet':
-    case 'cyan':
-    case 'red':
-    case 'green':
-      return value;
-    default:
-      return 'amber';
+function resolveAccent(value) {
+  if (typeof value === 'string' && VALID_ACCENTS.has(value)) {
+    return value;
   }
+
+  return 'amber';
 }
 
-function mapRemoteApps(remote: RemoteMenu | null): AppTileProps[] {
+function mapRemoteApps(remote) {
   if (!remote || !Array.isArray(remote.apps)) {
     return [];
   }
 
   return remote.apps
     .map((app) => {
-      const name = typeof app.name === 'string' ? app.name.trim() : '';
+      const name = typeof app?.name === 'string' ? app.name.trim() : '';
 
       if (!name) {
         return null;
@@ -95,13 +47,13 @@ function mapRemoteApps(remote: RemoteMenu | null): AppTileProps[] {
         icon: iconName ? resolveIcon(iconName) : undefined,
       };
     })
-    .filter((value): value is AppTileProps => value !== null);
+    .filter(Boolean);
 }
 
-const BeaverMenu: React.FC = () => {
-  const [apps, setApps] = React.useState<AppTileProps[]>([]);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+const BeaverMenu = () => {
+  const [apps, setApps] = React.useState([]);
+  const [error, setError] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -112,7 +64,7 @@ const BeaverMenu: React.FC = () => {
         setIsLoading(true);
         const response = await fetch('http://127.0.0.1:5000/api/menu', {
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
           },
         });
 
@@ -120,7 +72,7 @@ const BeaverMenu: React.FC = () => {
           throw new Error(`Backend responded with ${response.status}`);
         }
 
-        const payload: RemoteMenu = await response.json();
+        const payload = await response.json();
         if (!cancelled) {
           const mapped = mapRemoteApps(payload);
           setApps(mapped);
@@ -170,7 +122,7 @@ const BeaverMenu: React.FC = () => {
       </main>
 
       <footer className="menu-footer">
-        <small>NeutralinoJS • React • Beaver Suite ©2025</small>
+        <small>Electron • React • Beaver Suite ©2025</small>
       </footer>
     </div>
   );

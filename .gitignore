@@ -1,9 +1,11 @@
 # Developer tools' files
 .lite_workspace.lua
 
-# Neutralinojs binaries and builds
+# Build artifacts
 /bin
 /dist
+node_modules/
+/.webpack-cache
 
 # Neutralinojs client (minified)
 neutralino.js
