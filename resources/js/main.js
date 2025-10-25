@@ -97,6 +97,17 @@
   Neutralino.init();
   Neutralino.events.on('trayMenuItemClicked', onTrayMenuItemClicked);
   Neutralino.events.on('windowClose', onWindowClose);
+  Neutralino.events.on('ready', function () {
+    (async function () {
+      try {
+        var commandPromise = Neutralino.os.execCommand('node server.js');
+        console.log('Node backend started on port 5000');
+        await commandPromise;
+      } catch (error) {
+        console.error('Failed to start Node backend', error);
+      }
+    })();
+  });
 
   if (typeof NL_OS !== 'undefined' && NL_OS !== 'Darwin') {
     setTray();
