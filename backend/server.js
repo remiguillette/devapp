@@ -64,6 +64,20 @@ function createExpressApp() {
   app.use(morgan('tiny'));
   app.use(corsMiddleware);
 
+  app.head('/', (_req, res) => {
+    res.status(200).end();
+  });
+
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      message: 'Backend service is running.',
+      endpoints: {
+        health: '/health',
+        menu: '/api/menu',
+      },
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.status(200).json({
       status: 'ok',
