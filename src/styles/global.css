@@ -26,12 +26,14 @@ body {
   color: var(--text-main);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 3rem 1.5rem;
+  align-items: stretch;
+  padding: 0;
 }
 
 #root {
-  width: min(960px, 100%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .loading-state,
@@ -42,9 +44,13 @@ body {
 }
 
 .menu-root {
-  max-width: 960px;
-  padding: 2rem;
+  width: min(960px, 100%);
+  min-height: 100vh;
+  padding: 3rem 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
   text-align: center;
+  gap: 2rem;
 }
 
 .menu-header h1 {
@@ -53,7 +59,7 @@ body {
 }
 
 .subtitle {
-  margin: 0 0 2rem;
+  margin: 0;
   color: var(--text-muted);
 }
 
@@ -61,6 +67,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1.2rem;
+  flex: 1;
 }
 
 .menu-status {
@@ -129,7 +136,7 @@ body {
 }
 
 .menu-footer {
-  margin-top: 2rem;
+  margin-top: auto;
   color: var(--text-muted);
   font-size: 0.8rem;
 }
