@@ -2,10 +2,16 @@
   "name": "beaverkiosk",
   "version": "1.0.0",
   "description": "Electron-based launcher with a Node.js backend and React front-end dashboard.",
-  "main": "electron-main.js",
+  "main": "electron/main.js",
   "scripts": {
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:backend": "node backend/server.js",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5000 tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "build": "vite build",
+    "package": "npm run build && electron-builder --config electron/builder.config.json",
     "start": "electron .",
-    "backend": "node server.js"
+    "backend": "node backend/server.js"
   },
   "keywords": [
     "electron",
@@ -14,12 +20,20 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "electron": "^28.3.3"
-  },
   "dependencies": {
-    "@babel/standalone": "^7.28.5",
+    "express": "^4.19.2",
+    "lucide-react": "^0.441.0",
+    "morgan": "^1.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.2.11",
+    "wait-on": "^7.2.0"
   }
 }
