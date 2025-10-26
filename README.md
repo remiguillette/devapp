@@ -1,6 +1,6 @@
 # BeaverKiosk
 
-BeaverKiosk is now powered by an Electron shell, a lightweight Node.js backend, and a React-based launcher interface. The backend serves menu data from the `resources/data` directory, while the Electron renderer renders the dashboard directly from the local `resources/index.html` file.
+BeaverKiosk combines an Electron shell with a TypeScript-powered Node.js service and a lightweight React dashboard. The desktop launcher UI shipped in `resources/` remains unchanged, while the new backend exposes hardware telemetry, IPC helpers, and a parallel web experience at `http://localhost:5000/dashboard`.
 
 ## Getting started
 
@@ -16,7 +16,7 @@ BeaverKiosk is now powered by an Electron shell, a lightweight Node.js backend, 
    npm start
    ```
 
-   The startup script launches the Node.js backend on port `5000` and opens the Electron window that hosts the React UI.
+   The startup script compiles the backend, launches it on port `5000`, and opens the Electron window that hosts the kiosk UI from `resources/index.html`.
 
 3. **Run the backend without Electron (optional)**
 
@@ -24,28 +24,33 @@ BeaverKiosk is now powered by an Electron shell, a lightweight Node.js backend, 
    npm run backend
    ```
 
-   This starts the standalone HTTP server defined in `server.js`. The API will be available at `http://127.0.0.1:5000`.
+   This compiles and starts the standalone HTTP server. The API and dashboard will be available at `http://127.0.0.1:5000`.
 
 ## Project structure
 
 ```
-├── electron-main.js      # Electron entry point that boots the backend and window
-├── server.js             # Reusable Node.js HTTP server with /api/menu endpoint
-├── resources/
-│   ├── data/             # JSON data consumed by the backend
-│   ├── icons/            # Static application icons
-│   ├── index.html        # React mount point loaded by Electron
-│   ├── js/
-│   │   ├── menu.jsx      # React dashboard logic compiled in-browser via Babel
-│   │   └── vendor/       # Bundled vendor libraries (Lucide icons)
-│   └── styles.css        # UI styling shared by the renderer
-└── package.json          # npm metadata and scripts
+├── electron-main.js            # Electron entry point that boots the backend and window
+├── resources/                  # Existing kiosk UI assets (unchanged design)
+├── scripts/
+│   └── build-react.mjs         # esbuild bundler for the dashboard
+├── src/
+│   ├── backend/
+│   │   ├── ipc/                # IPC server (UNIX socket today, replaceable later)
+│   │   ├── services/           # System integrations (battery, Wi-Fi, commands)
+│   │   └── server.ts           # Express HTTP server + API wiring
+│   └── frontend/
+│       └── react/              # Parallel dashboard served at /dashboard
+├── dist/                       # Compiled backend + dashboard assets (gitignored)
+├── server.js                   # Thin bridge that loads the compiled backend
+├── tsconfig.json               # TypeScript configuration for the backend
+└── package.json                # npm metadata and scripts
 ```
 
 ## Configuration
 
-* **Backend port** – Override the `PORT` environment variable to change the port used by the HTTP server and Electron shell.
+* **Backend port** – Override the `PORT` environment variable to change the port used by the HTTP server, Electron shell, and dashboard.
 * **Menu content** – Update `resources/data/menu.json` to manage the tiles shown in the launcher.
+* **IPC socket** – Set `BEAVERKIOSK_IPC` to override the default `/tmp/beaverkiosk.sock` path.
 
 ## License
 
