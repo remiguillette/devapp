@@ -4,8 +4,11 @@
   "description": "Electron-based launcher with a Node.js backend and React front-end dashboard.",
   "main": "electron-main.js",
   "scripts": {
-    "start": "electron .",
-    "backend": "node server.js"
+    "build": "npm run build:backend && npm run build:web",
+    "build:backend": "tsc -p tsconfig.json",
+    "build:web": "node scripts/build-react.mjs",
+    "start": "npm run build && electron .",
+    "backend": "npm run build && node dist/backend/server.js"
   },
   "keywords": [
     "electron",
@@ -15,10 +18,14 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^28.3.3"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7",
+    "electron": "^28.3.3",
+    "esbuild": "^0.21.4",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@babel/standalone": "^7.28.5",
+    "express": "^4.19.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }
