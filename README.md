@@ -1,6 +1,8 @@
 # BeaverKiosk
 
-BeaverKiosk is now powered by an Electron shell, a lightweight Node.js backend, and a React-based launcher interface. The backend serves menu data from the `resources/data` directory, while the Electron renderer renders the dashboard directly from the local `resources/index.html` file.
+BeaverKiosk ships as an Electron application with a dedicated Node.js backend and a Vite-powered React renderer. The backend expo
+ses a `/api/menu` endpoint that serves JSON from the `backend/data` directory while the renderer bundles a modern React experienc
+e with Lucide icons.
 
 ## Getting started
 
@@ -10,42 +12,61 @@ BeaverKiosk is now powered by an Electron shell, a lightweight Node.js backend, 
    npm install
    ```
 
-2. **Run the Electron shell**
+2. **Run the app in development**
 
    ```bash
-   npm start
+   npm run dev
    ```
 
-   The startup script launches the Node.js backend on port `5000` and opens the Electron window that hosts the React UI.
+   This command starts the Express backend on port `5000`, the Vite dev server on port `5173`, and then boots Electron pointed at
+ the dev renderer.
 
-3. **Run the backend without Electron (optional)**
+3. **Package the application**
+
+   ```bash
+   npm run package
+   ```
+
+   Running the packaging script builds the React renderer and creates distributables with `electron-builder`. Output artifacts are
+ written to the `release/` directory.
+
+4. **Run the backend in isolation (optional)**
 
    ```bash
    npm run backend
    ```
 
-   This starts the standalone HTTP server defined in `server.js`. The API will be available at `http://127.0.0.1:5000`.
+   This starts the standalone backend server defined in `backend/server.js`. The API will be available at `http://127.0.0.1:5000`
+.
 
 ## Project structure
 
 ```
-├── electron-main.js      # Electron entry point that boots the backend and window
-├── server.js             # Reusable Node.js HTTP server with /api/menu endpoint
-├── resources/
-│   ├── data/             # JSON data consumed by the backend
-│   ├── icons/            # Static application icons
-│   ├── index.html        # React mount point loaded by Electron
-│   ├── js/
-│   │   ├── menu.jsx      # React dashboard logic compiled in-browser via Babel
-│   │   └── vendor/       # Bundled vendor libraries (Lucide icons)
-│   └── styles.css        # UI styling shared by the renderer
-└── package.json          # npm metadata and scripts
+├── backend/
+│   ├── data/                  # JSON payloads consumed by the backend
+│   ├── routes/                # Express route modules
+│   └── server.js              # Express server with health check and /api/menu endpoint
+├── electron/
+│   ├── builder.config.json    # electron-builder configuration
+│   ├── icons/                 # Application icons and build resources
+│   ├── main.js                # Electron main process entry
+│   └── preload.js             # Isolated preload bridge for the renderer
+├── src/
+│   ├── api/                   # Fetch helpers for backend communication
+│   ├── components/            # Reusable React components
+│   ├── pages/                 # Top-level React screens
+│   ├── styles/                # Global styling
+│   ├── App.jsx                # Root React component
+│   └── main.jsx               # React entry point used by Vite
+├── index.html                 # Vite HTML entry point
+├── package.json               # npm metadata, scripts, and dependencies
+└── vite.config.js             # Vite configuration for the renderer build
 ```
 
 ## Configuration
 
-* **Backend port** – Override the `PORT` environment variable to change the port used by the HTTP server and Electron shell.
-* **Menu content** – Update `resources/data/menu.json` to manage the tiles shown in the launcher.
+- **Backend port** – Override the `PORT` environment variable to change the port used by the backend server and Electron shell.
+- **Menu content** – Update `backend/data/menu.json` to manage the tiles shown in the launcher.
 
 ## License
 
